@@ -1,238 +1,330 @@
 DOMAINS = {
 
-    "V1_Healthcare": """
-        RULE: The business's PRIMARY purpose is diagnosing, treating, or caring for
-        human physical or mental health. The customer is a patient.
+    "D01_Healthcare": """
+        RULE: The business's primary purpose is diagnosing, treating, or caring
+        for human physical or mental health. The customer is a human patient.
 
-        INCLUDES: Medical doctors, specialists, dentists, orthodontists, chiropractors,
-        optometrists, ophthalmologists, physical therapists, occupational therapists,
-        speech therapists, psychotherapists, counselors, psychiatrists, nutritionists,
-        audiologists, midwives, doulas, acupuncturists, massage therapists (clinical),
-        holistic and alternative medicine practitioners. Hospitals, urgent care centers,
-        emergency rooms, surgical centers, medical groups, medical offices, clinics,
-        medical laboratories, diagnostic imaging centers, MRI centers, pregnancy care
-        centers, fertility clinics, IV therapy, dialysis centers, addiction treatment
-        centers, rehabilitation centers, home health care services, nursing homes,
-        hospices, assisted living facilities, adult day care centers.
+        INCLUDES: Medical doctors (GPs, specialists), surgeons, dentists,
+        orthodontists, chiropractors, optometrists, ophthalmologists, physical
+        therapists, occupational therapists, speech therapists, psychologists,
+        psychiatrists, counselors, nutritionists, audiologists, midwives,
+        acupuncturists, massage therapists (clinical/medical), holistic and
+        alternative medicine practitioners. Hospitals, urgent care centers,
+        emergency rooms, surgical centers, medical groups, medical clinics,
+        medical laboratories, diagnostic imaging, MRI centers, pregnancy care,
+        fertility clinics, IV therapy, dialysis centers, addiction treatment,
+        rehabilitation centers, home health care, nursing homes, hospices,
+        assisted living facilities, adult day care.
 
-        DOES NOT INCLUDE: Gyms, yoga studios, spas, tanning salons (those are
-        V7_Hospitality). Pharmacies and medical supply stores (those are V8_Retail).
-        Life coaches, personal trainers unless medically supervised (V9_Professional
-        or V7_Hospitality). Veterinarians (use V6_Facilities or V9_Professional).
+        DOES NOT INCLUDE: Animal health or veterinary (D02_PetCare). Gyms,
+        yoga studios, spas, salons, tanning (D09_BeautyWellness or
+        D10_FitnessSports). Pharmacies and medical supply retail (D11_Retail).
+        Life coaches or personal trainers (D10_FitnessSports).
     """,
 
-    "V2_Automotive": """
-        RULE: The business sells, services, repairs, or rents motor vehicles or
-        directly vehicle-specific parts and accessories. The product or service
-        is a vehicle or a component designed for a vehicle.
+    "D02_PetCare": """
+        RULE: The business provides health, grooming, boarding, or care
+        services where the primary patient or client is an animal.
 
-        INCLUDES: Car dealerships (new and used), motorcycle dealers, ATV dealers,
-        RV dealers, truck dealers, trailer dealers, golf cart dealers, electric
-        vehicle dealers, boat dealers, personal watercraft dealers, snowmobile dealers.
-        Auto repair shops, auto body shops, brake shops, muffler shops, transmission
-        shops, oil change services, wheel alignment, auto glass, dent removal, car
-        detailing, car wash, tire shops. Auto parts stores, car battery stores,
-        car accessories stores, motorcycle parts stores. Vehicle inspection, smog
-        inspection, auto auctions, towing services.
+        INCLUDES: Veterinarians, animal hospitals, veterinary specialists,
+        emergency animal clinics, pet dental care. Dog groomers, cat groomers,
+        mobile pet groomers. Dog training, pet obedience schools. Boarding
+        kennels, doggy day care, cat boarding, pet sitting services, dog
+        walking services. Aquarium maintenance, exotic animal care,
+        livestock veterinarians. Pet cremation, animal shelters and rescues.
 
-        DOES NOT INCLUDE: Gas stations (V8_Retail). Driving schools (V10_Education).
-        Parking lots and garages (V4_RealEstate). Boat tours or RV parks (V7_Hospitality).
-        Ship manufacturers or aircraft manufacturers (V5_Industrial).
+        DOES NOT INCLUDE: Pet supply stores and pet food retail (D11_Retail).
+        Animal farms raising livestock for food production (D13_Manufacturing).
+        Human healthcare (D01_Healthcare).
     """,
 
-    "V3_Construction": """
-        RULE: The business physically builds, installs, renovates, or repairs
-        structures and built environments on-site. The worker goes to the site
-        and changes something physical about a building or property.
+    "D03_Automotive": """
+        RULE: The business sells, repairs, services, rents, or cleans motor
+        vehicles or vehicle-specific parts and accessories.
 
-        INCLUDES: General contractors, home builders, remodelers, roofing contractors,
-        HVAC contractors, electrical contractors (installation), plumbing contractors,
-        concrete contractors, demolition contractors, masonry contractors, insulation
-        contractors, flooring contractors, drywall contractors, siding contractors,
-        tile contractors, paving contractors, fence contractors, swimming pool
-        contractors, deck builders, garage builders, shed builders, dock builders,
-        modular home builders, foundation contractors, excavation contractors,
-        scaffolding services. Electricians, plumbers, carpenters, welders (on-site),
-        glaziers, plasterers, handypersons. Civil engineering, road construction.
+        INCLUDES: Car dealerships (new and used), motorcycle dealers, ATV
+        dealers, truck dealers, trailer dealers, RV dealers, golf cart
+        dealers, electric vehicle dealers, boat dealers, snowmobile dealers.
+        Auto repair shops, auto body shops, collision repair, brake shops,
+        muffler shops, transmission shops, oil change services, wheel
+        alignment, auto glass repair, dent removal, car detailing, car wash,
+        tire shops, roadside assistance, towing services. Auto parts stores,
+        car battery stores, motorcycle parts stores. Smog inspection, vehicle
+        inspection, auto auctions, fleet management services.
 
-        DOES NOT INCLUDE: Architects and interior designers who do not build
-        (V9_Professional). Manufacturers of building materials (V5_Industrial).
-        Landscapers and lawn care (V6_Facilities). Property maintenance cleaning
-        (V6_Facilities). Metal fabrication shops not doing on-site work (V5_Industrial).
+        DOES NOT INCLUDE: Gas stations as standalone fuel retailers (D11_Retail).
+        Driving schools (D14_PublicNonProfit or D12_B2BCorporate). Parking
+        lots and garages as real estate (D06_RealEstate). Boat tours
+        (D08_Lodging). Manufacturers of vehicles (D13_Manufacturing).
     """,
 
-    "V4_RealEstate": """
-        RULE: The business's revenue comes from property transactions, property
-        management, or financial instruments backed by real property.
+    "D04_Construction": """
+        RULE: The business physically builds, installs, renovates, or
+        structurally repairs buildings and infrastructure on-site at the
+        property. Workers go to the site and physically change the structure.
 
-        INCLUDES: Real estate agencies, real estate agents and brokers, real estate
-        developers, commercial real estate firms, industrial real estate firms,
-        property management companies, property investment firms, real estate
-        appraisers, home inspectors, mortgage lenders, mortgage brokers, loan
-        agencies, real estate attorneys, foreclosure services, escrow services,
-        title companies, land surveyors. Apartment complexes, housing developments,
-        condominiums, student housing communities, housing cooperatives, furnished
-        apartments, homeowners associations, housing authorities. Self-storage
-        facilities, cold storage operators, records storage facilities, parking
-        garages and lots (as commercial real estate assets).
+        INCLUDES: General contractors, home builders, custom home builders,
+        remodeling contractors, roofing contractors, HVAC installers,
+        electrical contractors (installation), plumbing contractors, concrete
+        contractors, demolition contractors, masonry contractors, insulation
+        contractors, flooring contractors (installation), drywall contractors,
+        siding contractors, tile contractors, paving contractors, fence
+        contractors, swimming pool contractors, deck builders, garage
+        builders, shed builders, dock builders, modular home builders,
+        foundation contractors, excavation contractors, scaffolding services.
+        Carpenters, plumbers, electricians, glaziers, plasterers, welders
+        doing on-site structural work. Road construction, bridge construction,
+        civil engineering contractors.
 
-        DOES NOT INCLUDE: Construction companies that build properties (V3_Construction).
-        Moving and storage services (V5_Industrial for logistics). Short-term vacation
-        rentals operated as hospitality (V7_Hospitality). Banks and financial
-        institutions not focused on mortgages (V9_Professional).
+        DOES NOT INCLUDE: Routine maintenance and cleaning (D05_Cleaning).
+        Interior designers and architects who do not build (D12_B2BCorporate).
+        Manufacturers of building materials (D13_Manufacturing). Landscaping
+        and lawn care (D05_Cleaning).
     """,
 
-    "V5_Industrial": """
-        RULE: The business manufactures physical goods at scale, distributes raw
-        materials or finished goods B2B, or operates energy/logistics infrastructure.
-        The primary customer is another business, not an end consumer.
+    "D05_Cleaning": """
+        RULE: The business provides routine or project-based physical
+        maintenance, cleaning, security, or restoration of properties.
+        They maintain the property — they do not build or renovate it.
 
-        INCLUDES: Manufacturers of all types — automotive parts, electronics,
-        furniture, food, industrial machinery, chemicals, glass, metals, tools,
-        batteries, plastics, textiles, clothing, shoes, paper. Industrial suppliers
-        and B2B wholesalers: metal suppliers, pipe suppliers, electrical equipment
-        suppliers, hydraulic suppliers, building material suppliers, energy suppliers,
-        industrial gas suppliers, chemical wholesalers. Energy infrastructure: oil
-        and gas companies, petroleum companies, power plants, electric utilities,
-        solar energy companies, wind farms, refineries, nuclear power plants.
-        Logistics: freight forwarders, shipping companies, trucking companies,
-        import/export firms, warehouses, distribution centers. Food processing,
-        breweries, distilleries, packaging companies, print shops (commercial).
-        Farms producing agricultural goods as a business (not agritourism).
+        INCLUDES: Commercial office cleaning, janitorial services, maid
+        services, house cleaning, carpet cleaning, window cleaning, pressure
+        washing, air duct cleaning, dryer vent cleaning. Landscaping, lawn
+        care, lawn mowing, arborist services, tree trimming, tree removal,
+        stump grinding, hedge trimming, leaf blowing, irrigation maintenance.
+        Pest control, rodent control, termite treatment. Waste management,
+        junk removal, debris removal, garbage collection, septic system
+        service, sanitation, portable toilet rental. Fire and water damage
+        restoration, mold remediation, chimney sweeps, gutter cleaning and
+        repair, drain cleaning, property maintenance services. Snow removal,
+        pool cleaning and maintenance. Security guard services, security
+        patrol services, alarm monitoring.
 
-        DOES NOT INCLUDE: Retail stores selling manufactured goods to consumers
-        (V8_Retail). Contractors who install or build on-site (V3_Construction).
-        Software companies (V9_Professional). Restaurants and food service (V7_Hospitality).
+        DOES NOT INCLUDE: Construction and renovation (D04_Construction).
+        Landscaping supply stores (D11_Retail). Manufacturing (D13_Manufacturing).
     """,
 
-    "V6_Facilities": """
-        RULE: The business provides ongoing or project-based physical maintenance,
-        cleaning, security, or restoration services to properties. They come to
-        the property and maintain it — they do not build or renovate it.
+    "D06_RealEstate": """
+        RULE: The business's revenue comes from property transactions,
+        property management, or financial instruments tied to real property.
 
-        INCLUDES: Commercial cleaning, janitorial services, carpet cleaning, window
-        cleaning, pressure washing, air duct cleaning, dryer vent cleaning, house
-        cleaning. Landscaping, lawn care, lawn mowing, arborist services, tree
-        services, tree trimming, pest control, irrigation maintenance. Waste
-        management, junk removal, debris removal, garbage collection, septic system
-        service, sanitation services, portable toilet rental. Fire damage restoration,
-        water damage restoration, mold remediation, chimney sweeps, gutter cleaning,
-        drain cleaning, property maintenance. Security guard services, alarm system
-        monitoring, physical security providers. Snow removal, pool cleaning and
-        maintenance, parking lot maintenance.
+        INCLUDES: Real estate agencies, real estate agents and brokers,
+        commercial real estate firms, industrial real estate, property
+        management companies, property investment firms, real estate
+        appraisers, home inspectors, mortgage lenders, mortgage brokers,
+        loan agencies, real estate attorneys, foreclosure services, escrow
+        services, title companies, land surveyors, housing authorities,
+        homeowners associations. Apartment complexes, housing developments,
+        condominiums, student housing, housing cooperatives, furnished
+        apartments. Self-storage facilities, cold storage operators, records
+        storage facilities, parking garages and parking lots.
 
-        DOES NOT INCLUDE: Construction and renovation (V3_Construction). Landscaping
-        supply stores (V8_Retail). Manufacturing (V5_Industrial). Veterinarians or
-        animal care (V1_Healthcare). Facility security equipment sales (V8_Retail).
+        DOES NOT INCLUDE: Construction companies that build properties
+        (D04_Construction). Moving and logistics services (D13_Manufacturing).
+        Short-term vacation rentals operating as hospitality (D08_Lodging).
+        Banks and general financial institutions (D12_B2BCorporate).
     """,
 
-    "V7_Hospitality": """
-        RULE: The business's product is an in-person experience — the customer
-        comes to the location to eat, drink, sleep, be entertained, or recreate.
+    "D07_FoodDining": """
+        RULE: The business is a place where customers come in person to
+        purchase and consume food or beverages on-site or as takeout.
 
-        INCLUDES: Restaurants of all cuisines and formats (dine-in, fast food,
-        cafes, food trucks), bars, pubs, brewpubs, cocktail bars, coffee shops,
-        bakeries, dessert shops, ice cream shops. Hotels, motels, resorts, bed and
-        breakfasts, hostels, guest houses, inns, lodges, serviced apartments,
-        vacation rentals operated as lodging, RV parks, campgrounds. Event venues,
-        banquet halls, concert halls, amphitheaters, stadiums, wedding venues, live
-        music venues. Amusement parks, theme parks, water parks, escape rooms,
-        bowling alleys, casinos, golf courses, go-kart tracks, ski resorts,
-        recreational clubs, paintball centers. Gyms, fitness centers, yoga studios,
-        pilates studios, rock climbing gyms. Spas, day spas, massage spas, tanning
-        salons, nail salons, hair salons, barbershops. Tour operators, travel
-        agencies, cruise agencies, boat tours, helicopter tours.
+        INCLUDES: Restaurants of all cuisines and formats (dine-in, fast
+        food, fast casual, fine dining), diners, cafes, coffee shops,
+        espresso bars, tea houses, juice bars, smoothie shops, food trucks,
+        food halls, food courts, delis, sandwich shops, pizza places, burger
+        joints, taco stands. Bars, pubs, taverns, brewpubs, cocktail bars,
+        wine bars, sports bars. Bakeries, donut shops, pastry shops, dessert
+        shops, ice cream parlors, frozen yogurt shops, candy stores.
+        Catering companies primarily serving individuals and events.
 
-        DOES NOT INCLUDE: Hotels that only manage properties (V4_RealEstate).
-        Catering companies primarily serving corporate clients (V9_Professional).
-        Food manufacturers and distributors (V5_Industrial). Sporting goods stores (V8_Retail).
+        DOES NOT INCLUDE: Hotels that serve food secondarily (D08_Lodging).
+        Grocery stores and food retail (D11_Retail). Food manufacturers and
+        distributors (D13_Manufacturing). Corporate catering (D12_B2BCorporate).
     """,
 
-    "V8_Retail": """
-        RULE: The business operates a physical storefront that sells tangible goods
-        directly to individual end consumers who walk in and purchase items.
+    "D08_Lodging": """
+        RULE: The business provides overnight accommodation or organized
+        travel and tourism experiences.
 
-        INCLUDES: Clothing stores, footwear stores, department stores, general
-        merchandise stores, dollar stores, discount stores, specialty retail,
-        home goods stores, furniture stores, flooring stores, mattress stores,
-        hardware stores, electronics stores, appliance stores, pet stores, toy
+        INCLUDES: Hotels, motels, boutique hotels, luxury resorts, beach
+        resorts, mountain resorts, casino resorts, extended-stay hotels,
+        bed and breakfasts, hostels, guest houses, inns, lodges, serviced
+        apartments, vacation rental operators, RV parks, campgrounds,
+        glamping sites, cabin rentals. Tour operators, travel agencies,
+        cruise agencies, sightseeing tour companies, boat tour operators,
+        helicopter tour operators, hot air balloon rides, guided hiking
+        tours, adventure tourism operators. Airport shuttles and travel
+        transport services.
+
+        DOES NOT INCLUDE: Restaurants and bars (D07_FoodDining). Real estate
+        managing long-term rentals (D06_RealEstate). Amusement and recreation
+        venues (D10_FitnessSports).
+    """,
+
+    "D09_BeautyWellness": """
+        RULE: The business provides personal appearance, grooming, or
+        relaxation services directly to individual human clients.
+
+        INCLUDES: Hair salons, barbershops, hair colorists, blowout bars,
+        braiding salons. Nail salons, manicure and pedicure services, nail
+        art studios. Waxing studios, threading studios, laser hair removal,
+        electrolysis. Skincare clinics, facials, estheticians, med spas
+        (non-medical cosmetic). Massage spas, day spas, body treatment
+        studios, float therapy. Tattoo studios, piercing studios. Eyelash
+        extensions, brow studios, permanent makeup. Tanning salons, spray
+        tanning. Makeup artists, bridal hair and makeup. Holistic wellness:
+        aromatherapy, reiki, reflexology studios.
+
+        DOES NOT INCLUDE: Medical procedures by licensed physicians
+        (D01_Healthcare). Clinical massage therapy billed to insurance
+        (D01_Healthcare). Gyms and fitness centers (D10_FitnessSports).
+        Beauty product retail (D11_Retail). Cosmetology schools
+        (D14_PublicNonProfit).
+    """,
+
+    "D10_FitnessSports": """
+        RULE: The business provides in-person active recreation, exercise,
+        sports training, or entertainment as a live venue experience.
+
+        INCLUDES: Gyms, fitness centers, CrossFit boxes, weightlifting gyms.
+        Yoga studios, pilates studios, barre studios, cycling studios.
+        Martial arts schools, boxing gyms, wrestling clubs, jiu-jitsu academies.
+        Rock climbing gyms, parkour gyms. Dance studios, ballet schools.
+        Swimming pools (private), tennis clubs, golf courses, golf driving
+        ranges, mini golf. Sports complexes, athletic facilities, batting
+        cages, go-kart tracks, paintball centers, archery ranges, shooting
+        ranges. Bowling alleys, billiards halls, axe throwing venues.
+        Amusement parks, theme parks, water parks, escape rooms, arcades,
+        laser tag, trampoline parks. Event venues, concert halls, theaters,
+        stadiums, amphitheaters, comedy clubs, live music venues, casinos,
+        nightclubs, banquet halls for events.
+
+        DOES NOT INCLUDE: Dance schools teaching academic programs
+        (D14_PublicNonProfit). Medical rehabilitation (D01_Healthcare).
+        Sporting goods stores (D11_Retail). Tour operators (D08_Lodging).
+    """,
+
+    "D11_Retail": """
+        RULE: The business operates a physical storefront that sells tangible
+        goods directly to individual end consumers who walk in and purchase.
+
+        INCLUDES: Clothing stores, footwear stores, department stores,
+        general merchandise stores, dollar stores, discount stores, specialty
+        retail, home goods stores, furniture stores, flooring stores, mattress
+        stores, hardware stores, electronics stores, appliance stores, toy
         stores, book stores, music stores, game stores, sporting goods stores,
         hobby stores, jewelry stores, gift shops, pharmacies, drug stores.
         Grocery stores, supermarkets, health food stores, organic food stores,
-        ethnic grocery stores, liquor stores, wine stores, beer stores.
-        Camping stores, bicycle shops, fishing stores, outdoor recreation stores.
-        Thrift stores, consignment shops, antique stores, pawn shops, outlet stores.
-        Auto parts stores open to the public, tire shops (retail), gas stations.
+        ethnic grocery stores, liquor stores, wine stores. Pet supply stores,
+        pet food stores. Camping stores, bicycle shops, outdoor recreation
+        stores. Thrift stores, antique stores, pawn shops, consignment shops.
+        Gas stations, convenience stores, vape shops, smoke shops.
 
-        DOES NOT INCLUDE: B2B wholesalers and distributors (V5_Industrial).
-        Online-only retailers with no physical storefront. Restaurants and food
-        service where food is consumed on-premises (V7_Hospitality). Repair shops
-        that sell parts incidentally (classify by primary service).
+        DOES NOT INCLUDE: B2B wholesalers (D13_Manufacturing). Online-only
+        retailers. Restaurants where food is consumed on-site (D07_FoodDining).
+        Service businesses that incidentally sell products.
     """,
 
-    "V9_Professional": """
-        RULE: The business sells specialized knowledge, expertise, or technology
-        services. The primary deliverable is advice, a document, software, or
-        a managed service — not a physical product or in-person experience.
+    "D12_B2BCorporate": """
+        RULE: The business sells specialized professional knowledge, legal,
+        financial, technology, or administrative services — primarily to
+        other businesses or sophisticated clients. The deliverable is advice,
+        a document, software, or a managed service, not a physical product
+        or in-person experience.
 
-        INCLUDES: Law firms, attorneys, legal services, notary publics, paralegals.
-        Accounting firms, accountants, auditors, tax preparation services, payroll
-        services, bookkeepers, financial planners, financial advisors. Management
-        consultants, business consultants, HR consultants, marketing consultants.
-        Marketing agencies, advertising agencies, branding agencies, PR firms,
-        SEO agencies, digital agencies. Software companies, IT service companies,
-        computer networking, cybersecurity firms, web hosting providers, ISPs,
-        telecommunications companies, data centers, cloud services. Insurance
-        agencies, banks, credit unions, investment services, debt collection.
-        Staffing agencies, employment agencies, executive recruiters. Architects,
-        engineering consultants (non-construction), design firms, industrial designers.
-        Private investigators, process servers, notaries, court reporters.
+        INCLUDES: Law firms, attorneys, legal services, notary publics,
+        paralegals. Accounting firms, accountants, auditors, tax preparation,
+        payroll services, bookkeepers. Financial planners, financial advisors,
+        investment services, insurance agencies, banks, credit unions, debt
+        collectors. Management consultants, business consultants, HR
+        consultants. Marketing agencies, advertising agencies, branding
+        agencies, PR firms, SEO agencies, digital agencies. Software
+        companies, IT service companies, managed IT providers, cybersecurity
+        firms, web hosting, ISPs, data centers, cloud services, tech support.
+        Staffing agencies, employment agencies, executive recruiters.
+        Architects, engineering consultants (office-based), design firms.
+        Private investigators, process servers, court reporters, notaries.
+        Commercial printing, sign companies (design and print).
 
-        DOES NOT INCLUDE: Software stores that sell boxed products (V8_Retail).
-        On-site trade contractors who install things (V3_Construction). Government
-        agencies (V10_Education). Hospitals and medical practices (V1_Healthcare).
+        DOES NOT INCLUDE: On-site trade contractors (D04_Construction).
+        Government agencies (D14_PublicNonProfit). Hospitals and medical
+        practices (D01_Healthcare). Software retail stores (D11_Retail).
     """,
 
-    "V10_Education": """
-        RULE: The organization's primary mission is education, workforce training,
-        civic administration, public safety, or non-commercial social services.
-        Revenue model is tuition, taxes, grants, or donations — not market sales.
+    "D13_Manufacturing": """
+        RULE: The business manufactures physical goods at scale, distributes
+        raw materials or products B2B, or operates energy and logistics
+        infrastructure. The primary customer is another business.
 
-        INCLUDES: K-12 schools, universities, colleges, community colleges, technical
-        schools, trade schools, vocational schools, language schools, driving schools,
-        beauty schools, martial arts schools, dance schools, music schools, tutoring
-        centers, test prep centers. Non-profit organizations, charities, foundations,
-        volunteer organizations, veterans organizations, social services, food banks,
-        homeless shelters, halfway houses, community centers. Government offices:
-        city halls, county offices, federal offices, post offices, public health
-        departments, DMV, public libraries, police departments, fire departments,
-        sheriff departments, courts, probation offices, tax offices. Places of
-        worship: churches, mosques, synagogues, temples, shrines as community
-        non-commercial organizations. Military bases, armed forces, government agencies.
-        Labor unions, professional associations, civic organizations.
+        INCLUDES: Manufacturers of all types — auto parts, electronics,
+        furniture, food, industrial machinery, chemicals, glass, metals,
+        tools, batteries, plastics, textiles, clothing, shoes, paper, wood
+        products. Industrial suppliers and B2B wholesalers: metal suppliers,
+        pipe suppliers, electrical equipment suppliers, hydraulic equipment,
+        building material suppliers, energy suppliers, industrial gases,
+        chemical wholesalers. Energy infrastructure: oil and gas companies,
+        petroleum companies, power plants, electric utilities, solar energy
+        farms, wind farms, refineries, nuclear power plants. Logistics:
+        freight forwarders, shipping companies, trucking companies, import
+        and export firms, warehouses, distribution centers, courier services.
+        Food processing plants, commercial breweries, distilleries, packaging
+        companies, commercial print shops. Farms producing agricultural goods
+        as a commodity business (not agritourism). Mines, quarries,
+        sawmills, steel mills.
 
-        DOES NOT INCLUDE: For-profit private training companies selling courses as
-        a product (V9_Professional). Commercial gyms or dance studios that operate
-        as entertainment businesses (V7_Hospitality).
+        DOES NOT INCLUDE: Retail stores selling manufactured goods to
+        consumers (D11_Retail). On-site construction contractors
+        (D04_Construction). Software and tech service companies (D12_B2BCorporate).
+        Restaurants and food service (D07_FoodDining).
+    """,
+
+    "D14_PublicNonProfit": """
+        RULE: The organization's primary mission is education, public
+        administration, civic service, public safety, or a non-commercial
+        social mission. Revenue model is tuition, taxes, grants, or
+        donations — not market-rate sales.
+
+        INCLUDES: K-12 schools, universities, colleges, community colleges,
+        technical and trade schools, vocational schools, language schools,
+        driving schools, cosmetology schools, culinary schools, music
+        schools, martial arts schools (if non-profit or community-based),
+        dance schools, tutoring centers, test prep centers. Non-profit
+        organizations, charities, foundations, volunteer organizations,
+        veterans organizations, social services organizations, food banks,
+        homeless shelters, halfway houses, community centers, animal shelters.
+        Government offices: city halls, county offices, federal offices,
+        post offices, public health departments, DMV, public libraries,
+        police departments, fire departments, courts, probation offices, tax
+        offices. Places of worship: churches, mosques, synagogues, temples,
+        shrines as non-commercial community organizations. Military bases,
+        armed forces, government agencies, labor unions, professional
+        associations, civic organizations.
+
+        DOES NOT INCLUDE: For-profit private training companies (D12_B2BCorporate).
+        Commercial gyms and dance studios (D10_FitnessSports). Cosmetology
+        schools operated as for-profit businesses (D12_B2BCorporate).
     """,
 
     "ARCHIVE": """
-        RULE: The entry is not a business — it is a geographic location, natural
-        feature, public infrastructure, or abstract concept with no commercial entity
-        that a B2B sales team would target.
+        RULE: The entry is not a business — it is a geographic location,
+        natural feature, public landmark, or abstract term with no
+        identifiable commercial entity that a B2B sales team could contact.
 
-        INCLUDES: Natural features — beaches, rivers, lakes, mountains, waterfalls,
-        caves, forests, bays, peninsulas, islands, ridges, springs, cliffs, inlets.
-        Public parks — national parks, state parks, city parks, nature preserves,
-        wildlife refuges, arboretums, botanical gardens. Public infrastructure —
-        bridges, canals, highways, dams, train stations (the infrastructure, not the
-        business), bus stops. Purely geographic or civic landmarks — plazas, monuments,
-        scenic spots, vista points, historical landmarks as places (not businesses).
-        Abstract or generic terms with no specific commercial entity: "cars", "services",
-        "industry", "health", "entertainment", "company", "store".
+        INCLUDES: Natural features — beaches, rivers, lakes, mountains,
+        waterfalls, caves, forests, bays, islands, peninsulas, cliffs,
+        springs, inlets, ridges. Public parks — national parks, state parks,
+        city parks, nature preserves, wildlife refuges, botanical gardens.
+        Public infrastructure as places — bridges, dams, canals, highways,
+        train stations (the physical location, not a transit company).
+        Purely geographic or civic landmarks — plazas, monuments, scenic
+        overlooks, historical sites as places (not as museum businesses).
+        Abstract or overly generic terms with no specific commercial
+        entity: "services", "industry", "company", "store", "center" alone.
 
-        DOES NOT INCLUDE: Businesses that happen to be located at a natural attraction
-        (e.g., a tour operator at a national park → V7_Hospitality). Public transit
-        companies that sell services (→ V5_Industrial or V9_Professional).
+        DOES NOT INCLUDE: Businesses operating at natural locations (e.g.
+        a tour operator at a national park belongs in D08_Lodging). Transit
+        companies that sell tickets and operate routes (D13_Manufacturing
+        or D12_B2BCorporate).
     """
 }
