@@ -5,16 +5,18 @@ groq_labeler.py
 Sends all CATEGORIES to Groq in batches and gets the LLM to map each one
 to the correct domain key from DOMAINS. Saves the result as ground_truth.json.
 
+Setup:
+    pip install groq python-dotenv
+
+    Then create a .env file in this folder with:
+        GROQ_API_KEY=gsk_your_key_here
+
+    Get your key at: https://console.groq.com/keys
+
 Usage:
-    pip install groq
-    export GROQ_API_KEY="gsk_..."
-    python groq_labeler.py
-
-    # Or pass key inline:
-    GROQ_API_KEY="gsk_..." python groq_labeler.py
-
-    # Resume a partial run (skips already-labeled categories):
-    python groq_labeler.py --resume
+    python groq_labeler.py              # full run
+    python groq_labeler.py --resume     # resume a partial run
+    python groq_labeler.py --model openai/gpt-oss-120b   # override model
 """
 
 import os
@@ -37,9 +39,9 @@ from data.categories import CATEGORIES
 from data.domains import DOMAINS
 
 # ── Config ───────────────────────────────────────────────────────────────────
-MODEL          = "llama-3.3-70b-versatile"   # best available on Groq
+MODEL          = "openai/gpt-oss-120b"        # OpenAI 120B open-weight on Groq
 BATCH_SIZE     = 50                           # categories per API call
-DELAY_SECONDS  = 1.5                          # pause between batches (rate limit)
+DELAY_SECONDS  = 2.0                          # pause between batches (rate limit)
 MAX_RETRIES    = 4                            # retries per batch on failure
 OUTPUT_FILE    = "outputs/ground_truth.json"
 DOMAIN_KEYS    = list(DOMAINS.keys())
@@ -157,11 +159,25 @@ def main():
                         help=f"Groq model to use (default {MODEL})")
     args = parser.parse_args()
 
-    # ── API key ───────────────────────────────────────────────────────────────
+    # ── API key: try .env file first, then environment variable ─────────────
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()  # loads .env from current directory
+    except ImportError:
+        pass  # dotenv not installed, fall back to env var only
+
     api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
-        print("ERROR: GROQ_API_KEY environment variable not set.")
-        print("  Set it with:  export GROQ_API_KEY='gsk_...'")
+        print("ERROR: GROQ_API_KEY not found.")
+        print()
+        print("  Option 1 — .env file (recommended):")
+        print("    Create a file called .env in this folder containing:")
+        print("      GROQ_API_KEY=gsk_your_key_here")
+        print()
+        print("  Option 2 — environment variable:")
+        print("    export GROQ_API_KEY='gsk_your_key_here'")
+        print()
+        print("  Get your key at: https://console.groq.com/keys")
         sys.exit(1)
 
     client = Groq(api_key=api_key)
