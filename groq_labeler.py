@@ -40,10 +40,10 @@ from data.categories import CATEGORIES
 from data.domains import DOMAINS
 
 # ── Config ───────────────────────────────────────────────────────────────────
-MODEL          = "openai/gpt-oss-120b"  # OpenAI 120B open-weight on Groq
-BATCH_SIZE     = 20                     # LOWERED: keeps total tokens/min well under limit
-DELAY_SECONDS  = 5.0                    # RAISED: 5s between batches as a safety buffer
-MAX_RETRIES    = 5                      # retries per batch on failure
+MODEL          = "openai/gpt-oss-120b"  # 120B model (JSON mode fixed, batch size keeps TPM < 8k)
+BATCH_SIZE     = 15                          # Safe size: ~1,200 tokens/call total
+DELAY_SECONDS  = 5.0                         # 5s between batches
+MAX_RETRIES    = 5
 OUTPUT_FILE    = "outputs/ground_truth.json"
 DOMAIN_KEYS    = list(DOMAINS.keys())
 
@@ -110,6 +110,24 @@ def build_user_prompt(batch: list) -> str:
     return f"Classify each of these business categories:\n\n{items}"
 
 
+def _extract_json(text: str) -> dict:
+    """
+    Parse JSON from model output.
+    Handles plain JSON and ```json ... ``` fenced blocks.
+    """
+    text = text.strip()
+    # Strip markdown fences if present
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
+        text = re.sub(r"```$", "", text.strip())
+    # Find the first { ... } block
+    start = text.find("{")
+    end   = text.rfind("}")
+    if start != -1 and end != -1:
+        text = text[start:end+1]
+    return json.loads(text)
+
+
 # ── Core labeling function ────────────────────────────────────────────────────
 def label_batch(client, batch: list, batch_num: int) -> dict:
     """Call Groq API for one batch. Returns {category: domain_key} dict."""
@@ -123,12 +141,12 @@ def label_batch(client, batch: list, batch_num: int) -> dict:
                     {"role": "system", "content": _SYSTEM_PROMPT},
                     {"role": "user",   "content": build_user_prompt(batch)},
                 ],
-                temperature=0.0,    # fully deterministic
-                max_tokens=512,     # JSON of 20 items ≈ 200–400 tokens
-                response_format={"type": "json_object"},
+                temperature=0.0,   # fully deterministic
+                max_tokens=2048,   # enough room for 15 items + any padding
+                # NOTE: response_format json_object removed — not supported by all Groq models
             )
             raw = response.choices[0].message.content.strip()
-            result = json.loads(raw)
+            result = _extract_json(raw)
 
             # Validate
             missing = [c for c in batch if c not in result]
