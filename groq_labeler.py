@@ -16,10 +16,11 @@ Setup:
 Usage:
     python groq_labeler.py              # full run
     python groq_labeler.py --resume     # resume a partial run
-    python groq_labeler.py --model openai/gpt-oss-120b   # override model
+    python groq_labeler.py --batch-size 15 --model openai/gpt-oss-120b
 """
 
 import os
+import re
 import sys
 import json
 import time
@@ -39,88 +40,114 @@ from data.categories import CATEGORIES
 from data.domains import DOMAINS
 
 # ── Config ───────────────────────────────────────────────────────────────────
-MODEL          = "openai/gpt-oss-120b"        # OpenAI 120B open-weight on Groq
-BATCH_SIZE     = 50                           # categories per API call
-DELAY_SECONDS  = 2.0                          # pause between batches (rate limit)
-MAX_RETRIES    = 4                            # retries per batch on failure
+MODEL          = "openai/gpt-oss-120b"  # OpenAI 120B open-weight on Groq
+BATCH_SIZE     = 20                     # LOWERED: keeps total tokens/min well under limit
+DELAY_SECONDS  = 5.0                    # RAISED: 5s between batches as a safety buffer
+MAX_RETRIES    = 5                      # retries per batch on failure
 OUTPUT_FILE    = "outputs/ground_truth.json"
 DOMAIN_KEYS    = list(DOMAINS.keys())
 
-# ── System prompt ─────────────────────────────────────────────────────────────
-def build_system_prompt() -> str:
-    domain_block = "\n\n".join(
-        f"[{key}]\n{desc.strip()}"
+
+# ── System prompt (built ONCE, not per batch) ────────────────────────────────
+def _extract_rule(desc: str) -> str:
+    """
+    Pull the full RULE sentence from a domain description.
+    The RULE: line may wrap across multiple lines until a blank line.
+    """
+    lines = desc.strip().splitlines()
+    collecting = False
+    rule_parts = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("RULE:"):
+            collecting = True
+            rule_parts.append(stripped[5:].strip())
+        elif collecting:
+            # Stop at blank line or next section keyword
+            if not stripped or stripped.startswith("INCLUDES:") or stripped.startswith("DOES NOT"):
+                break
+            rule_parts.append(stripped)
+    if rule_parts:
+        return " ".join(rule_parts)
+    # fallback
+    for line in lines:
+        if line.strip():
+            return line.strip()
+    return desc.strip()[:150]
+
+
+def _build_system_prompt() -> str:
+    """
+    Compact system prompt: one RULE line per domain only.
+    Full domain descriptions are ~2,500 tokens each call — way too expensive.
+    The RULE line is enough for the 120B model to classify correctly.
+    """
+    rules_block = "\n".join(
+        f"{key}: {_extract_rule(desc)}"
         for key, desc in DOMAINS.items()
     )
-    keys_str = ", ".join(DOMAIN_KEYS)
-    return f"""You are a business taxonomy classifier. Your job is to assign each business category to exactly one of the following domain keys:
+    return f"""You are a business taxonomy classifier. Assign each business category string to exactly one domain key.
 
-{keys_str}
+Domain keys and their one-line rules:
+{rules_block}
 
-Here are the definitions for each domain:
-
-{domain_block}
-
-RULES:
-- You must return ONLY a valid JSON object.
-- Keys are the exact category strings I give you.
-- Values are exactly one of the domain keys listed above.
-- Do not add explanations, markdown, or any text outside the JSON object.
-- Do not make up new domain keys.
+OUTPUT RULES:
+- Return ONLY a valid JSON object. No markdown, no explanation, no code block.
+- Every key must be the exact category string from the input (copy it verbatim).
+- Every value must be exactly one domain key from the list above.
 - Every category in the input must appear in the output.
 
-Example output format:
-{{
-  "pizza restaurant": "V7_Hospitality",
-  "auto repair shop": "V2_Automotive",
-  "software company": "V9_Professional"
-}}"""
+Example output:
+{{"pizza restaurant": "D07_FoodDining", "auto repair shop": "D03_Automotive", "software company": "D12_B2BCorporate"}}"""
 
 
-def build_user_prompt(batch: list[str]) -> str:
+# Build once at import time
+_SYSTEM_PROMPT = _build_system_prompt()
+
+
+def build_user_prompt(batch: list) -> str:
     items = "\n".join(f'- "{cat}"' for cat in batch)
     return f"Classify each of these business categories:\n\n{items}"
 
 
 # ── Core labeling function ────────────────────────────────────────────────────
-def label_batch(client: Groq, batch: list[str], batch_num: int) -> dict[str, str]:
+def label_batch(client, batch: list, batch_num: int) -> dict:
     """Call Groq API for one batch. Returns {category: domain_key} dict."""
-    for attempt in range(1, MAX_RETRIES + 1):
+    attempt = 0
+    while attempt < MAX_RETRIES:
+        attempt += 1
         try:
             response = client.chat.completions.create(
                 model=MODEL,
                 messages=[
-                    {"role": "system", "content": build_system_prompt()},
+                    {"role": "system", "content": _SYSTEM_PROMPT},
                     {"role": "user",   "content": build_user_prompt(batch)},
                 ],
-                temperature=0.0,        # deterministic — we want no creativity here
-                max_tokens=4096,
+                temperature=0.0,    # fully deterministic
+                max_tokens=512,     # JSON of 20 items ≈ 200–400 tokens
                 response_format={"type": "json_object"},
             )
             raw = response.choices[0].message.content.strip()
             result = json.loads(raw)
 
-            # Validate: all keys present, all values are valid domain keys
-            missing  = [c for c in batch if c not in result]
-            invalid  = [v for v in result.values() if v not in DOMAIN_KEYS]
+            # Validate
+            missing = [c for c in batch if c not in result]
+            invalid = [v for v in result.values() if v not in DOMAIN_KEYS]
 
             if missing:
-                print(f"    ⚠ Batch {batch_num} attempt {attempt}: {len(missing)} categories missing from response")
-                # fill missing with None so we can retry
+                print(f"    ⚠ attempt {attempt}: {len(missing)} missing — retrying")
                 if attempt < MAX_RETRIES:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2 * attempt)
                     continue
 
             if invalid:
-                print(f"    ⚠ Batch {batch_num} attempt {attempt}: invalid domain keys: {invalid}")
+                print(f"    ⚠ attempt {attempt}: invalid keys {invalid} — retrying")
                 if attempt < MAX_RETRIES:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2 * attempt)
                     continue
 
-            # Clean: drop any keys the LLM invented that aren't in our batch
+            # Drop any hallucinated keys, fill missing with None
             cleaned = {k: v for k, v in result.items() if k in batch and v in DOMAIN_KEYS}
-
-            # Fill any remaining missing with None (will be retried in --resume mode)
             for cat in batch:
                 if cat not in cleaned:
                     cleaned[cat] = None
@@ -128,22 +155,24 @@ def label_batch(client: Groq, batch: list[str], batch_num: int) -> dict[str, str
             return cleaned
 
         except json.JSONDecodeError as e:
-            print(f"    ✗ Batch {batch_num} attempt {attempt}: JSON parse error — {e}")
+            print(f"    ✗ attempt {attempt}: JSON error — {e}")
             if attempt < MAX_RETRIES:
-                time.sleep(2 ** attempt)
+                time.sleep(2 * attempt)
 
         except Exception as e:
             err_str = str(e)
             if "rate_limit" in err_str.lower() or "429" in err_str:
-                wait = 60
-                print(f"    ✗ Rate limit hit. Waiting {wait}s...")
+                # Read the actual retry-after from Groq's error message
+                m = re.search(r"try again in ([\d.]+)s", err_str, re.IGNORECASE)
+                wait = float(m.group(1)) + 3 if m else 65
+                print(f"    ✗ Rate limit hit. Waiting {wait:.0f}s (Groq says so)...")
                 time.sleep(wait)
+                attempt -= 1  # don't count rate-limit waits as a real attempt
             else:
-                print(f"    ✗ Batch {batch_num} attempt {attempt}: {e}")
+                print(f"    ✗ attempt {attempt}: {type(e).__name__}: {e}")
                 if attempt < MAX_RETRIES:
-                    time.sleep(2 ** attempt)
+                    time.sleep(3 ** attempt)  # 3, 9, 27, 81s
 
-    # All retries exhausted — return Nones for this batch
     print(f"    ✗ Batch {batch_num}: all retries exhausted. Marking as None.")
     return {cat: None for cat in batch}
 
@@ -157,45 +186,42 @@ def main():
                         help=f"Categories per API call (default {BATCH_SIZE})")
     parser.add_argument("--model", type=str, default=MODEL,
                         help=f"Groq model to use (default {MODEL})")
+    parser.add_argument("--delay", type=float, default=DELAY_SECONDS,
+                        help=f"Seconds between batches (default {DELAY_SECONDS})")
     args = parser.parse_args()
 
-    # ── API key: try .env file first, then environment variable ─────────────
+    # ── API key: .env file first, then env var ────────────────────────────────
     try:
         from dotenv import load_dotenv
-        load_dotenv()  # loads .env from current directory
+        load_dotenv()
     except ImportError:
-        pass  # dotenv not installed, fall back to env var only
+        pass
 
     api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
-        print("ERROR: GROQ_API_KEY not found.")
-        print()
+        print("ERROR: GROQ_API_KEY not found.\n")
         print("  Option 1 — .env file (recommended):")
-        print("    Create a file called .env in this folder containing:")
-        print("      GROQ_API_KEY=gsk_your_key_here")
-        print()
+        print("    Create a file called .env in this folder:")
+        print("      GROQ_API_KEY=gsk_your_key_here\n")
         print("  Option 2 — environment variable:")
-        print("    export GROQ_API_KEY='gsk_your_key_here'")
-        print()
+        print("    export GROQ_API_KEY='gsk_your_key_here'\n")
         print("  Get your key at: https://console.groq.com/keys")
         sys.exit(1)
 
     client = Groq(api_key=api_key)
-
-    # ── Directory setup ───────────────────────────────────────────────────────
     os.makedirs("outputs", exist_ok=True)
 
     # ── Resume: load existing results ─────────────────────────────────────────
-    existing: dict[str, str] = {}
+    existing = {}
     if args.resume and Path(OUTPUT_FILE).exists():
         with open(OUTPUT_FILE) as f:
             existing = json.load(f)
-        already_done = sum(1 for v in existing.values() if v is not None)
-        print(f"Resuming: {already_done} already labeled, "
-              f"{len(existing) - already_done} failed (None), "
+        done  = sum(1 for v in existing.values() if v is not None)
+        fails = sum(1 for v in existing.values() if v is None)
+        print(f"Resuming: {done} done, {fails} failed, "
               f"{len(CATEGORIES) - len(existing)} not yet seen.")
 
-    # ── Decide which categories need labeling ─────────────────────────────────
+    # ── Which categories still need labeling ──────────────────────────────────
     if args.resume:
         to_label = [c for c in CATEGORIES if existing.get(c) is None]
     else:
@@ -203,73 +229,66 @@ def main():
         existing = {}
 
     if not to_label:
-        print("All categories already labeled. Nothing to do.")
+        print("All categories already labeled.")
         print(f"Output: {OUTPUT_FILE}")
         return
 
-    # ── Batch loop ────────────────────────────────────────────────────────────
     batch_size = args.batch_size
-    batches = [to_label[i:i+batch_size] for i in range(0, len(to_label), batch_size)]
-    total   = len(batches)
-    results = dict(existing)
+    batches    = [to_label[i:i+batch_size] for i in range(0, len(to_label), batch_size)]
+    total      = len(batches)
+    results    = dict(existing)
 
+    # Estimate tokens: ~15 tokens/category in user prompt + ~500 token system prompt
+    est_tpm = (batch_size * 15 + 500) * (60 / (args.delay + 2))
     print(f"\n{'='*60}")
     print(f"Groq Batch Labeler")
     print(f"{'='*60}")
-    print(f"  Model      : {args.model}")
-    print(f"  Categories : {len(to_label)}")
-    print(f"  Batch size : {batch_size}")
-    print(f"  Batches    : {total}")
-    print(f"  Output     : {OUTPUT_FILE}")
+    print(f"  Model        : {args.model}")
+    print(f"  Categories   : {len(to_label)}")
+    print(f"  Batch size   : {batch_size}")
+    print(f"  Batches      : {total}")
+    print(f"  Delay        : {args.delay}s")
+    print(f"  Est. TPM     : ~{est_tpm:,.0f}")
+    print(f"  Output       : {OUTPUT_FILE}")
     print(f"{'='*60}\n")
 
     for i, batch in enumerate(batches, 1):
-        print(f"Batch {i}/{total}  ({len(batch)} categories) ...", end=" ", flush=True)
+        print(f"Batch {i}/{total}  ({len(batch)} items)...", end=" ", flush=True)
         t0 = time.time()
 
         batch_result = label_batch(client, batch, i)
         results.update(batch_result)
 
-        # Count successes in this batch
         ok  = sum(1 for c in batch if results.get(c) is not None)
         bad = len(batch) - ok
-        elapsed = time.time() - t0
-        print(f"✓ {ok} labeled, {bad} failed  [{elapsed:.1f}s]")
+        print(f"✓ {ok} ok  {bad} failed  [{time.time()-t0:.1f}s]")
 
-        # Save after every batch (crash-safe)
+        # Crash-safe save after every batch
         with open(OUTPUT_FILE, "w") as f:
             json.dump(results, f, indent=2)
 
-        # Rate limit pause (skip after last batch)
         if i < total:
-            time.sleep(DELAY_SECONDS)
+            time.sleep(args.delay)
 
-    # ── Final report ─────────────────────────────────────────────────────────
-    total_labeled = sum(1 for v in results.values() if v is not None)
-    total_failed  = sum(1 for v in results.values() if v is None)
+    # ── Final report ──────────────────────────────────────────────────────────
+    total_ok   = sum(1 for v in results.values() if v is not None)
+    total_fail = sum(1 for v in results.values() if v is None)
 
     print(f"\n{'='*60}")
-    print(f"DONE")
-    print(f"  Total labeled : {total_labeled} / {len(CATEGORIES)}")
-    print(f"  Failed (None) : {total_failed}")
-    print(f"  Output file   : {OUTPUT_FILE}")
+    print(f"DONE  —  {total_ok} labeled  /  {total_fail} failed")
+    print(f"Output: {OUTPUT_FILE}")
     print(f"{'='*60}")
 
-    # Domain distribution
     from collections import Counter
     dist = Counter(v for v in results.values() if v is not None)
     print("\nDomain distribution:")
     for domain in DOMAIN_KEYS:
         count = dist.get(domain, 0)
         bar   = "█" * (count // 10)
-        print(f"  {domain:<22} {count:>4}  {bar}")
+        print(f"  {domain:<28} {count:>4}  {bar}")
 
-    if total_failed > 0:
-        failed_cats = [c for c, v in results.items() if v is None]
-        print(f"\n⚠  {total_failed} categories could not be labeled:")
-        for cat in failed_cats:
-            print(f"   - {cat}")
-        print(f"\nRun with --resume to retry failed ones.")
+    if total_fail > 0:
+        print(f"\n⚠  {total_fail} failed — run with --resume to retry.")
 
 
 if __name__ == "__main__":
