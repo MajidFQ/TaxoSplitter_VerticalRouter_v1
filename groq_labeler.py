@@ -44,7 +44,7 @@ MODEL          = "openai/gpt-oss-120b"  # 120B model (JSON mode fixed, batch siz
 BATCH_SIZE     = 15                          # Safe size: ~1,200 tokens/call total
 DELAY_SECONDS  = 5.0                         # 5s between batches
 MAX_RETRIES    = 5
-OUTPUT_FILE    = "outputs/ground_truth.json"
+OUTPUT_FILE    = "data/ground_truth.json"
 DOMAIN_KEYS    = list(DOMAINS.keys())
 
 
